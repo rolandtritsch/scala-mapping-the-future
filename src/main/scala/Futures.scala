@@ -5,21 +5,21 @@ import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.Promise
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 object Futures extends StrictLogging {
 
-  def mapASimpleFuture(f: Future[Int]) = f.map(i => {
+  def mapASimpleFuture(f: Future[Int]): Future[Int] = f.map(i => {
     logger.debug(s"mapping: ${i}")
     i
   })
-  def andThenASimpleFuture(f: Future[Int]) = f.andThen { case Success(i) => {
-    logger.debug(s"andthen: ${i}")
-    f
-  }
+
+  def andThenASimpleFuture(f: Future[Int]): Future[Int] = f.andThen {
+    case Success(i) => logger.debug(s"andthen: ${i}")
+    case Failure(e) => logger.debug(s"andthen (fail): ${e.getMessage}")
   }
 
-  def mapAnOptionFuture(f: Future[Option[Int]]) = f.flatMap(i => {
+  def mapAnOptionFuture(f: Future[Option[Int]]): Future[Int] = f.flatMap(i => {
     val f = i.getOrElse(-7890)
     logger.debug(s"flat mapping: ${f}")
     Future(f)
@@ -44,6 +44,7 @@ object Futures extends StrictLogging {
     val anotherSimpleIntFuture2 = andThenASimpleFuture(simpleIntFuture2)
     logger.debug(s"before the promise: ${simpleIntFuture2}")
     simpleIntPromise2.success(4321)
+    //simpleIntPromise2.failure(new Exception("boom"))
     logger.debug(s"after the promise: ${simpleIntFuture2}")
     // why is that not a success too?
     logger.debug(s"after the (another) promise: ${anotherSimpleIntFuture2}")
